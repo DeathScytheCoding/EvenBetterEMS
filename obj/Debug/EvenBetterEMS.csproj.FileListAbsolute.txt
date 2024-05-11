@@ -9,3 +9,11 @@ C:\Users\popcheese\Documents\LSPDFR Mods\EvenBetterEMS\New Development\EvenBette
 C:\Users\popcheese\Documents\LSPDFR Mods\EvenBetterEMS\New Development\EvenBetterEMS\obj\Debug\EvenBett.C1D7CEA6.Up2Date
 C:\Users\popcheese\Documents\LSPDFR Mods\EvenBetterEMS\New Development\EvenBetterEMS\obj\Debug\EvenBetterEMS.dll
 C:\Users\popcheese\Documents\LSPDFR Mods\EvenBetterEMS\New Development\EvenBetterEMS\obj\Debug\EvenBetterEMS.pdb
+C:\Users\popcheese\Documents\LSPDFR Mods\EvenBetterEMS Plugin\EvenBetterEMS\bin\Debug\EvenBetterEMS.dll
+C:\Users\popcheese\Documents\LSPDFR Mods\EvenBetterEMS Plugin\EvenBetterEMS\bin\Debug\EvenBetterEMS.pdb
+C:\Users\popcheese\Documents\LSPDFR Mods\EvenBetterEMS Plugin\EvenBetterEMS\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll
+C:\Users\popcheese\Documents\LSPDFR Mods\EvenBetterEMS Plugin\EvenBetterEMS\obj\Debug\EvenBetterEMS.csproj.AssemblyReference.cache
+C:\Users\popcheese\Documents\LSPDFR Mods\EvenBetterEMS Plugin\EvenBetterEMS\obj\Debug\EvenBetterEMS.csproj.CoreCompileInputs.cache
+C:\Users\popcheese\Documents\LSPDFR Mods\EvenBetterEMS Plugin\EvenBetterEMS\obj\Debug\EvenBett.C1D7CEA6.Up2Date
+C:\Users\popcheese\Documents\LSPDFR Mods\EvenBetterEMS Plugin\EvenBetterEMS\obj\Debug\EvenBetterEMS.dll
+C:\Users\popcheese\Documents\LSPDFR Mods\EvenBetterEMS Plugin\EvenBetterEMS\obj\Debug\EvenBetterEMS.pdb
