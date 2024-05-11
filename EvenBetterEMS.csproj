@@ -33,13 +33,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="LSPD First Response">
-      <HintPath>..\..\References\LSPD First Response.dll</HintPath>
+      <HintPath>..\references\LSPD First Response.dll</HintPath>
     </Reference>
     <Reference Include="RAGENativeUI">
-      <HintPath>..\..\References\RAGENativeUI.dll</HintPath>
+      <HintPath>..\references\RAGENativeUI.dll</HintPath>
     </Reference>
     <Reference Include="RagePluginHookSDK">
-      <HintPath>..\..\References\RagePluginHookSDK.dll</HintPath>
+      <HintPath>..\references\RagePluginHookSDK.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

@@ -321,12 +321,12 @@ namespace EvenBetterEMS
             if (patientPed.IsDead)
             {
                 medicPed.Tasks.GoToOffsetFromEntity(patientPed, 0f, 0f, 10f).WaitForCompletion();
+                medicPed.Tasks.PlayAnimation("amb@medic@standing@tendtodead@idle_a", "idle_a", -1f, AnimationFlags.Loop);
             }
             else
             {
                 medicPed.Tasks.GoToOffsetFromEntity(patientPed, 1f, 0f, 10f).WaitForCompletion();
             }
-            
         }
 
         private static void warpEMSCloserChecker()
