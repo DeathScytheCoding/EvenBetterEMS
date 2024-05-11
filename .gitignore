@@ -8,3 +8,7 @@
 *.pdb
 /bin
 /obj
+bin/Debug/EvenBetterEMS.dll
+bin/Debug/EvenBetterEMS.pdb
+obj/Debug/EvenBetterEMS.dll
+obj/Debug/EvenBetterEMS.pdb
