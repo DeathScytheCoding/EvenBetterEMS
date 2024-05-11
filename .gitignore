@@ -1,15 +1,4 @@
 
 .vs/EvenBetterEMS/FileContentIndex/0c85c0bc-1828-494d-ac05-f224c5d430d6.vsidx
-.vs/EvenBetterEMS/FileContentIndex/eb4aaaea-a972-4821-aa40-3dffab8523e6.vsidx
-*.vsidx
-*.dll
-*.pdb
-*.dll
-*.pdb
-/bin
-/obj
-bin/Debug/EvenBetterEMS.dll
-bin/Debug/EvenBetterEMS.pdb
-obj/Debug/EvenBetterEMS.dll
-obj/Debug/EvenBetterEMS.pdb
+
 .vs/EvenBetterEMS/v17/.suo
