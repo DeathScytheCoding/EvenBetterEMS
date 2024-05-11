@@ -164,7 +164,6 @@ namespace EvenBetterEMS
                 Game.LogTrivial(patientPed.Health.ToString());
                 spawnPoint = World.GetNextPositionOnStreet(patientPed.Position.Around(250f));
                 location = World.GetNextPositionOnStreet(patientPed.Position.Around(20f));
-                parkPosition = World.GetNextPositionOnStreet(location.Around(5f));
 
                 if (ambul.Exists())
                 {
@@ -352,15 +351,16 @@ namespace EvenBetterEMS
                     WarpGameTimer = false;
                     drivingTask.WaitForCompletion();
 
-                    Rage.Task parkTask = medicPed.Tasks.ParkVehicle(parkPosition, ambul.Heading);
+                    parkPosition = World.GetNextPositionOnStreet(location.Around(5f));
+                    parkHeading = ambul.Heading;
+                    Rage.Task parkTask = medicPed.Tasks.ParkVehicle(parkPosition, parkHeading);
                     parkTask.WaitForCompletion(5000);
 
                     Rage.Task leaveVehicle = medicPed.Tasks.LeaveVehicle(LeaveVehicleFlags.None);
                     leaveVehicle.WaitForCompletion(10000);
 
-                    directionToPlayer = patientPed.Position;
                     float runHeading = MathHelper.ConvertDirectionToHeading(directionToPlayer);
-                    Rage.Task runTask = medicPed.Tasks.GoStraightToPosition(directionToPlayer.Around(2f), 10f, runHeading, 0, 20000);
+                    Rage.Task runTask = medicPed.Tasks.GoStraightToPosition(patientPed.Position.Around(2f), 10f, runHeading, 0, 20000);
                     runTask.WaitForCompletion();
                 }
 
