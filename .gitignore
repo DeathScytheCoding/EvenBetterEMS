@@ -6,3 +6,5 @@
 *.pdb
 *.dll
 *.pdb
+/bin
+/obj
