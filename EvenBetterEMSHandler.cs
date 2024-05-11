@@ -110,12 +110,13 @@ namespace EvenBetterEMS
                 {
                     if (!ped.IsDead)
                     {
-                        ped.Tasks.ClearImmediately();
+                        ped.Tasks.Clear();
                         ped.IsPersistent = true;
                         ped.BlockPermanentEvents = true;
                     }
                 }
-                callEMS(patientsBeingTreated[0]);
+                patientPed = patientsBeingTreated[0];
+                callEMS();
             }
             else
             {
@@ -157,7 +158,7 @@ namespace EvenBetterEMS
         }
 
         //function to send EMS to the location
-        private static void callEMS(Ped patientPed)
+        private static void callEMS()
         {
             if (patientPed != null)
             {
@@ -195,32 +196,7 @@ namespace EvenBetterEMS
 
                 ambul.IsSirenOn = true;
 
-                directionToPlayer = patientPed.Position;
-                directionToPlayer.Normalize();
-
-                drivingTask = medicPed.Tasks.DriveToPosition(location, 40f, VehicleDrivingFlags.Emergency);
-                GameFiber.Wait(3000);
-                GameFiber.StartNew(warpEMSCloserChecker);
-                drivingTask.WaitForCompletion();
-
-                Game.LogTrivial(patientPed.Health.ToString());
-
-                parkPosition = World.GetNextPositionOnStreet(location.Around(5f));
-                parkHeading = ambul.Heading;
-                Rage.Task parkTask = medicPed.Tasks.ParkVehicle(parkPosition, parkHeading);
-                parkTask.WaitForCompletion(5000);
-
-                Game.LogTrivial(patientPed.Health.ToString());
-
-                Rage.Task leaveVehicle = medicPed.Tasks.LeaveVehicle(LeaveVehicleFlags.None);
-                leaveVehicle.WaitForCompletion(10000);
-
-                Game.LogTrivial(patientPed.Health.ToString());
-
-                directionToPlayer.Normalize();
-                float runHeading = MathHelper.ConvertDirectionToHeading(directionToPlayer);
-                Rage.Task runTask = medicPed.Tasks.GoStraightToPosition(patientPed.Position.Around(2f), 10f, runHeading, 0, 20000);
-                runTask.WaitForCompletion();
+                medicTask();
             }
             else
             {
@@ -320,14 +296,37 @@ namespace EvenBetterEMS
                     EMSGameTimer = true;
                     GameFiber.Wait(10000);
                     EMSGameTimer = false;
-                }
-
-
-                if (Game.IsKeyDown(KeyBinding_callEMSKey) && EMSGameTimer)
+                } else if (Game.IsKeyDown(KeyBinding_callEMSKey) && EMSGameTimer)
                 {
                     Game.DisplayHelp("You must wait 10 seconds before calling EMS again.");
                 }
             }
+        }
+
+        private static void medicTask()
+        {
+            drivingTask = medicPed.Tasks.DriveToPosition(location, 30f, VehicleDrivingFlags.Emergency);
+            GameFiber.Wait(3000);
+            GameFiber.StartNew(warpEMSCloserChecker);
+            drivingTask.WaitForCompletion();
+
+            parkPosition = World.GetNextPositionOnStreet(location.Around(5f));
+            parkHeading = ambul.Heading;
+            Rage.Task parkTask = medicPed.Tasks.ParkVehicle(parkPosition, parkHeading);
+            parkTask.WaitForCompletion(5000);
+
+            Rage.Task leaveVehicle = medicPed.Tasks.LeaveVehicle(LeaveVehicleFlags.None);
+            leaveVehicle.WaitForCompletion(10000);
+
+            if (patientPed.IsDead)
+            {
+                medicPed.Tasks.GoToOffsetFromEntity(patientPed, 0f, 0f, 10f).WaitForCompletion();
+            }
+            else
+            {
+                medicPed.Tasks.GoToOffsetFromEntity(patientPed, 1f, 0f, 10f).WaitForCompletion();
+            }
+            
         }
 
         private static void warpEMSCloserChecker()
@@ -345,23 +344,10 @@ namespace EvenBetterEMS
                     Game.DisplayNotification("Warping EMS closer to you!");
                     Vector3 new_spawnPoint = World.GetNextPositionOnStreet(Game.LocalPlayer.Character.Position.Around(40f));
                     ambul.SetPositionWithSnap(new_spawnPoint);
-                    drivingTask = medicPed.Tasks.DriveToPosition(location, 40f, VehicleDrivingFlags.Emergency);
+                    medicTask();
                     WarpGameTimer = true;
-                    GameFiber.Wait(5000);
+                    GameFiber.Sleep(5000);
                     WarpGameTimer = false;
-                    drivingTask.WaitForCompletion();
-
-                    parkPosition = World.GetNextPositionOnStreet(location.Around(5f));
-                    parkHeading = ambul.Heading;
-                    Rage.Task parkTask = medicPed.Tasks.ParkVehicle(parkPosition, parkHeading);
-                    parkTask.WaitForCompletion(5000);
-
-                    Rage.Task leaveVehicle = medicPed.Tasks.LeaveVehicle(LeaveVehicleFlags.None);
-                    leaveVehicle.WaitForCompletion(10000);
-
-                    float runHeading = MathHelper.ConvertDirectionToHeading(directionToPlayer);
-                    Rage.Task runTask = medicPed.Tasks.GoStraightToPosition(patientPed.Position.Around(2f), 10f, runHeading, 0, 20000);
-                    runTask.WaitForCompletion();
                 }
 
                 if (Game.IsKeyDown(KeyBinding_warpEMSKey) && !ambul.Exists())
