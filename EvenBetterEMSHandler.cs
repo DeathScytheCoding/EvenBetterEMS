@@ -44,11 +44,21 @@ namespace EvenBetterEMS
         private static Blip ambulBlip;
         private static Ped medicPed;
         private static Ped patientPed;
-        private static Rage.Task drivingTask;
+        private static bool isParked;
+        private static bool hasWarped;
 
+        //probabilities
+        private static int prob_aliveIfDead = 50;
+        private static int prob_stabileIfDead = 50;
+        private static int prob_patientLivesIfDead = 50;
+        private static int prob_stabileIfAlive = 70;
+        private static int prob_patientLivesIfAlive = 70;
+
+        //Keybinds
         private static readonly Keys KeyBinding_menuKey = Keys.F6;
         private static readonly Keys KeyBinding_callEMSKey = Keys.OemSemicolon;
         private static readonly Keys KeyBinding_warpEMSKey = Keys.Divide;
+        private static readonly Keys KeyBinding_parkHere = Keys.Subtract;
 
         //Main plugin functions
         internal static void mainLoop()
@@ -116,6 +126,14 @@ namespace EvenBetterEMS
                     }
                 }
                 patientPed = patientsBeingTreated[0];
+                if (!patientPed.IsDead)
+                {
+                    Game.DisplaySubtitle("You: Go ahead and lay down, the medic will be here ASAP.");
+                    GameFiber.Wait(2000);
+                    patientPed.Tasks.PlayAnimation("move_injured_ground", "back_outro", 8f, AnimationFlags.None).WaitForCompletion();
+                    patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_chestpump_idle", -1f, AnimationFlags.Loop);
+                }
+                
                 callEMS();
             }
             else
@@ -123,38 +141,6 @@ namespace EvenBetterEMS
                 Game.LogTrivial("No ped found.");
                 Game.DisplayNotification("No injured peds found, try walking closer to them.");
             }
-            /*
-            Ped[] nearbyPeds = Game.LocalPlayer.Character.GetNearbyPeds(1);
-            if (nearbyPeds[0] != null)
-            {
-                Game.LogTrivial(nearbyPeds[0].Health.ToString());
-            }
-            if (nearbyPeds[0] != null) 
-            {
-                patientPed = nearbyPeds[0];
-                Game.LogTrivial(patientPed.IsAlive.ToString());
-
-                if (patientPed.Health < patientPed.MaxHealth)
-                {
-                    patientPed.MakePersistent();
-                    patientPed.BlockPermanentEvents = true;
-                    if (!patientPed.IsDead)
-                    {
-                        patientPed.Tasks.Clear();
-                    }
-                    callEMS(patientPed);
-                }
-                else
-                {
-                    Game.DisplayNotification("Ped is not injured, try walking closer to them.");
-                }
-            }
-            else
-            {
-                Game.LogTrivial("No ped found.");
-                Game.DisplayNotification("No injured peds found, try walking closer to them.");
-            }
-            */
         }
 
         //function to send EMS to the location
@@ -166,15 +152,7 @@ namespace EvenBetterEMS
                 spawnPoint = World.GetNextPositionOnStreet(patientPed.Position.Around(250f));
                 location = World.GetNextPositionOnStreet(patientPed.Position.Around(20f));
 
-                if (ambul.Exists())
-                {
-                    ambul.Delete();
-                }
-
-                if (medicPed.Exists())
-                {
-                    medicPed.Delete();
-                }
+                EvenBetterCleanup();
 
                 ambul = new Vehicle("AMBULANCE", spawnPoint);
                 medicPed = new Ped("s_m_m_paramedic_01", spawnPoint.Around(10f), 0f);
@@ -196,90 +174,31 @@ namespace EvenBetterEMS
 
                 ambul.IsSirenOn = true;
 
-                medicTask();
+                drivingTasks();
             }
             else
             {
                 Game.DisplayNotification("~r~EvenBetterEMS did not detect an injured ped. Try standing closer to them.");
             }
-
-            /*
-            TaskSequence ts = new TaskSequence(medicPed);
-
-            ts.Tasks.DriveToPosition(location, 40f, VehicleDrivingFlags.Emergency);
-            parkPosition = World.GetNextPositionOnStreet(location.Around(5f));
-            parkHeading = ambul.Heading;
-            ts.Tasks.ParkVehicle(parkPosition, parkHeading);
-
-            ts.Tasks.LeaveVehicle(LeaveVehicleFlags.None);
-            Vector3 directionToPlayer = Game.LocalPlayer.Character.Position;
-            directionToPlayer.Normalize();
-            
-            float runHeading = MathHelper.ConvertDirectionToHeading(directionToPlayer);
-            ts.Tasks.GoStraightToPosition(Game.LocalPlayer.Character.Position.Around(2f), 10f, runHeading, 2f, 15000);
-
-            ts.Execute();
-
-            Game.DisplayNotification("~r~EMS~/r~" + " are en-route to your location!");
-            */
-            //Rage.Task drivingTask = medicPed.Tasks.DriveToPosition(location, 40f, VehicleDrivingFlags.Emergency);
-            //GameFiber.Wait(5000);
-            /*if (!drivingTask.IsActive)
-            {
-                GameFiber.StartNew(EMSParkandRun);
-            }*/
         }
-
-        /*
-        private static void EMSParkandRun()
-        {
-            bool carIsParked = false;
-            Rage.Task parkingTask;
-
-            while (true)
-            {
-                GameFiber.Wait(500);
-                if (!drivingTask.IsActive && !carIsParked)
-                {
-                    ambul.IsSirenSilent = true;
-                    parkPosition = World.GetNextPositionOnStreet(ambul.Position.Around(5f));
-                    parkHeading = ambul.Heading;
-                    parkingTask = medicPed.Tasks.ParkVehicle(parkPosition, parkHeading);
-                    carIsParked = true;*/
-                    /*while (true)
-                    {
-                        GameFiber.Wait(500);
-                        if (!parkingTask.IsActive)
-                        {
-                            medicPed.Tasks.LeaveVehicle(LeaveVehicleFlags.None);
-                            Vector3 directionToPlayer = Game.LocalPlayer.Character.Position;
-                            directionToPlayer.Normalize();
-                            float runHeading = MathHelper.ConvertDirectionToHeading(directionToPlayer);
-                            medicPed.Tasks.GoStraightToPosition(Game.LocalPlayer.Character.Position.Around(2f), 10f, runHeading, 0, 1000);
-                        }
-                    }
-                }
-                if (!drivingTask.IsActive && carIsParked)
-                {
-                    
-                    GameFiber.Wait(5000);
-                    if (!parkingTask.IsActive)
-                    {
-                        medicPed.Tasks.LeaveVehicle(LeaveVehicleFlags.None);
-                        Vector3 directionToPlayer = Game.LocalPlayer.Character.Position;
-                        directionToPlayer.Normalize();
-                        float runHeading = MathHelper.ConvertDirectionToHeading(directionToPlayer);
-                        medicPed.Tasks.GoStraightToPosition(Game.LocalPlayer.Character.Position.Around(2f), 10f, runHeading, 0, 1000);
-                    }
-                }
-            }
-        }*/
 
         public static void EvenBetterCleanup()
         {
-            medicPed.Delete();
-            ambul.Delete();
-            ambulBlip.Delete();
+            if (medicPed.Exists())
+            {
+                medicPed.Delete();
+            }
+            if (ambul.Exists())
+            {
+                ambul.Delete();
+            }
+            if(ambulBlip.Exists())
+            {
+                ambulBlip.Delete();
+            }
+
+            isParked = false;
+            hasWarped = false;
         }
 
         private static void callEMSButtonChecker()
@@ -293,6 +212,7 @@ namespace EvenBetterEMS
                 if (Game.IsKeyDown(KeyBinding_callEMSKey) && !EMSGameTimer)
                 {
                     pedChecker();
+                    
                     EMSGameTimer = true;
                     GameFiber.Wait(10000);
                     EMSGameTimer = false;
@@ -300,32 +220,6 @@ namespace EvenBetterEMS
                 {
                     Game.DisplayHelp("You must wait 10 seconds before calling EMS again.");
                 }
-            }
-        }
-
-        private static void medicTask()
-        {
-            drivingTask = medicPed.Tasks.DriveToPosition(location, 30f, VehicleDrivingFlags.Emergency);
-            GameFiber.Wait(3000);
-            GameFiber.StartNew(warpEMSCloserChecker);
-            drivingTask.WaitForCompletion();
-
-            parkPosition = World.GetNextPositionOnStreet(location.Around(5f));
-            parkHeading = ambul.Heading;
-            Rage.Task parkTask = medicPed.Tasks.ParkVehicle(parkPosition, parkHeading);
-            parkTask.WaitForCompletion(5000);
-
-            Rage.Task leaveVehicle = medicPed.Tasks.LeaveVehicle(LeaveVehicleFlags.None);
-            leaveVehicle.WaitForCompletion(10000);
-
-            if (patientPed.IsDead)
-            {
-                medicPed.Tasks.GoToOffsetFromEntity(patientPed, 0f, 0f, 10f).WaitForCompletion();
-                medicPed.Tasks.PlayAnimation("amb@medic@standing@tendtodead@idle_a", "idle_a", -1f, AnimationFlags.Loop);
-            }
-            else
-            {
-                medicPed.Tasks.GoToOffsetFromEntity(patientPed, 1f, 0f, 10f).WaitForCompletion();
             }
         }
 
@@ -344,8 +238,9 @@ namespace EvenBetterEMS
                     Game.DisplayNotification("Warping EMS closer to you!");
                     Vector3 new_spawnPoint = World.GetNextPositionOnStreet(Game.LocalPlayer.Character.Position.Around(40f));
                     ambul.SetPositionWithSnap(new_spawnPoint);
-                    medicTask();
+                    drivingTasks();
                     WarpGameTimer = true;
+                    hasWarped = true;
                     GameFiber.Sleep(5000);
                     WarpGameTimer = false;
                 }
@@ -359,6 +254,181 @@ namespace EvenBetterEMS
                 {
                     Game.DisplayHelp("You must wait 5 seconds before warping again.");
                 }
+            }
+        }
+
+        private static void parkHereChecker()
+        {
+            Game.DisplayHelp("Taking too long to park while your patient is bleeding out? Hit - on the numpad to make them park where they are!");
+
+            while (true)
+            {
+                GameFiber.Yield();
+
+                if (Game.IsKeyDown(KeyBinding_parkHere) && ambul.Exists() && !isParked)
+                {
+                    isParked = true;
+                    medicPed.Tasks.ClearImmediately();
+                    medicTasks();
+                }
+            }
+        }
+
+        private static void drivingTasks()
+        {
+            Rage.Task drivingTask = medicPed.Tasks.DriveToPosition(location, 30f, VehicleDrivingFlags.Emergency);
+            if (!hasWarped)
+            {
+                GameFiber.Wait(3000);
+                GameFiber.StartNew(warpEMSCloserChecker);
+            }
+           
+            if (!isParked)
+            {
+                GameFiber.Wait(5000);
+                GameFiber.StartNew(parkHereChecker);
+            }
+           
+            drivingTask.WaitForCompletion();
+            ambul.IsSirenSilent = true;
+
+            parkPosition = World.GetNextPositionOnStreet(location.Around(4f));
+            parkHeading = ambul.Heading;
+            medicPed.Tasks.ParkVehicle(parkPosition, parkHeading).WaitForCompletion(5000);
+
+            isParked = true;
+
+            medicTasks();
+        }
+
+        private static void medicTasks()
+        {
+            medicPed.Tasks.LeaveVehicle(LeaveVehicleFlags.None).WaitForCompletion(5000);
+            
+            medicPed.Tasks.GoToOffsetFromEntity(patientPed, 0f, 0f, 10f).WaitForCompletion();
+
+            Game.DisplaySubtitle("Medic: Give us some room, I'm goin' in.");
+
+            if (patientPed.IsDead)
+            {
+                patientPed.Resurrect();
+
+                patientPed.MakePersistent();
+                patientPed.BlockPermanentEvents = true;
+                patientPed.Tasks.ClearImmediately();
+
+                //add currentMedicTask and currentPatientTask Rage.Task and move waitforcompletion below both animations
+
+                Rage.Task currentMedicTask;
+                Rage.Task currentPatientTask;
+
+                float patientZ = patientPed.Position.Z;
+                patientPed.SetPositionZ(patientZ + 10);
+                patientPed.SetPositionWithSnap(medicPed.Position);
+
+                currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_intro", 8f, AnimationFlags.None);
+                currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_intro", 8f, AnimationFlags.None);
+                currentMedicTask.WaitForCompletion();
+                currentPatientTask.WaitForCompletion();
+
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                GameFiber.Wait(500);
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                GameFiber.Wait(500);
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                GameFiber.Wait(500);
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                GameFiber.Wait(500);
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                GameFiber.Wait(1000);
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_cpr_to_kol", 8f, AnimationFlags.None).WaitForCompletion();
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_cpr_to_kol", 8f, AnimationFlags.None).WaitForCompletion();
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol_idle", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_kol_idle", 8f, AnimationFlags.None);
+                GameFiber.Wait(500);
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol", 8f, AnimationFlags.None).WaitForCompletion();
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_kol", 8f, AnimationFlags.None).WaitForCompletion();
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol_idle", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_kol_idle", 8f, AnimationFlags.None);
+                GameFiber.Wait(500);
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol", 8f, AnimationFlags.None).WaitForCompletion();
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_kol", 8f, AnimationFlags.None).WaitForCompletion();
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol_idle", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_kol_idle", 8f, AnimationFlags.None);
+                GameFiber.Wait(500);
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol_to_cpr", 8f, AnimationFlags.None).WaitForCompletion();
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                GameFiber.Wait(500);
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                GameFiber.Wait(500);
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                GameFiber.Wait(500);
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                GameFiber.Wait(500);
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
+                GameFiber.Wait(1000);
+
+                //roll prob_patientLivesIfDead
+
+                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_success", 8f, AnimationFlags.None);
+                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_success", 8f, AnimationFlags.None);
+                GameFiber.Wait(25000);
+
+                double percentageOfHealth = .5;
+                double patientMaxHealth = (double)patientPed.MaxHealth;
+
+                patientPed.Health = (int)(patientMaxHealth * percentageOfHealth);
+
+                Game.LogTrivial("Roll probabilities and give current status.");
+                Game.LogTrivial("Now is when the leaveScene function would run.");
+            }
+            else
+            { 
+                medicPed.Tasks.PlayAnimation("amb@code_human_police_crowd_control@idle_b", "idle_d", 8f, AnimationFlags.None);
+                GameFiber.Wait(3000);
+                medicPed.Tasks.PlayAnimation("amb@medic@standing@tendtodead@enter", "enter", 8.0F, AnimationFlags.None);
+                GameFiber.Wait(1000);
+                medicPed.Tasks.PlayAnimation("amb@medic@standing@tendtodead@base", "base", 8.0F, AnimationFlags.None);
+                GameFiber.Wait(1000);
+                medicPed.Tasks.PlayAnimation("amb@medic@standing@tendtodead@idle_a", "idle_a", -1f, AnimationFlags.Loop);
+                GameFiber.Wait(2000);
+                medicPed.Tasks.PlayAnimation("amb@medic@standing@tendtodead@exit", "exit", 8.0F, AnimationFlags.None);
+                GameFiber.Wait(2000);
+                medicPed.Tasks.Clear();
+
+                double percentageOfHealth = .85;
+                double patientMaxHealth = (double)patientPed.MaxHealth;
+
+                patientPed.Health = (int)(patientMaxHealth * percentageOfHealth);
+
+                Game.LogTrivial("Roll probabilities and give current status.");
+                Game.LogTrivial("Now is when the leaveScene function would run.");
             }
         }
 
