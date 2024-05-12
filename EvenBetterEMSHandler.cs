@@ -268,6 +268,8 @@ namespace EvenBetterEMS
                 if (Game.IsKeyDown(KeyBinding_parkHere) && ambul.Exists() && !isParked)
                 {
                     isParked = true;
+
+                    medicPed.Tasks.ParkVehicle(ambul.Position, ambul.Heading);
                     medicPed.Tasks.ClearImmediately();
                     medicTasks();
                 }
@@ -311,20 +313,30 @@ namespace EvenBetterEMS
 
             if (patientPed.IsDead)
             {
-                patientPed.Resurrect();
+                patientPed.Health = (patientPed.MaxHealth)/2;
+                patientPed.Resurrect();               
 
-                patientPed.MakePersistent();
-                patientPed.BlockPermanentEvents = true;
+                /*
+                float patientZ = patientPed.Position.Z;
+                patientPed.SetPositionZ(patientZ + 10);
+                patientPed.SetPositionWithSnap(medicPed.Position);
+                */
+                Game.LogTrivial(patientPed.Heading.ToString());
+                patientPed.SetRotationYaw(medicPed.Rotation.Yaw + 180f);
+                
+                patientPed.SetPositionX(medicPed.Position.X + .5f);
+                patientPed.SetPositionY(medicPed.Position.Y);
+
+                Game.LogTrivial(patientPed.Position.ToString());
+
                 patientPed.Tasks.ClearImmediately();
+
+                GameFiber.Wait(1000);
 
                 //add currentMedicTask and currentPatientTask Rage.Task and move waitforcompletion below both animations
 
                 Rage.Task currentMedicTask;
                 Rage.Task currentPatientTask;
-
-                float patientZ = patientPed.Position.Z;
-                patientPed.SetPositionZ(patientZ + 10);
-                patientPed.SetPositionWithSnap(medicPed.Position);
 
                 currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_intro", 8f, AnimationFlags.None);
                 currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_intro", 8f, AnimationFlags.None);
@@ -334,62 +346,86 @@ namespace EvenBetterEMS
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(500);
-                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
-                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentMedicTask.WaitForCompletion();
+                currentPatientTask.WaitForCompletion();
+
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(500);
-                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
-                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentMedicTask.WaitForCompletion();
+                currentPatientTask.WaitForCompletion();
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(500);
-                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
-                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentMedicTask.WaitForCompletion();
+                currentPatientTask.WaitForCompletion();
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(500);
-                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
-                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentMedicTask.WaitForCompletion();
+                currentPatientTask.WaitForCompletion();
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(1000);
-                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_cpr_to_kol", 8f, AnimationFlags.None).WaitForCompletion();
-                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_cpr_to_kol", 8f, AnimationFlags.None).WaitForCompletion();
+                currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_cpr_to_kol", 8f, AnimationFlags.None);
+                currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_cpr_to_kol", 8f, AnimationFlags.None);
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol_idle", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_kol_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(500);
-                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol", 8f, AnimationFlags.None).WaitForCompletion();
-                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_kol", 8f, AnimationFlags.None).WaitForCompletion();
+                currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol", 8f, AnimationFlags.None);
+                currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_kol", 8f, AnimationFlags.None);
+                currentMedicTask.WaitForCompletion();
+                currentPatientTask.WaitForCompletion();
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol_idle", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_kol_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(500);
-                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol", 8f, AnimationFlags.None).WaitForCompletion();
-                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_kol", 8f, AnimationFlags.None).WaitForCompletion();
+                currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol", 8f, AnimationFlags.None);
+                currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_kol", 8f, AnimationFlags.None);
+                currentMedicTask.WaitForCompletion();
+                currentPatientTask.WaitForCompletion();
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol_idle", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_kol_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(500);
-                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol_to_cpr", 8f, AnimationFlags.None).WaitForCompletion();
+                currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_kol_to_cpr", 8f, AnimationFlags.None);
+                currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_kol_to_cpr", 8f, AnimationFlags.None);
+                currentMedicTask.WaitForCompletion();
+                currentPatientTask.WaitForCompletion();
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(500);
-                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
-                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentMedicTask.WaitForCompletion();
+                currentPatientTask.WaitForCompletion();
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(500);
-                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
-                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentMedicTask.WaitForCompletion();
+                currentPatientTask.WaitForCompletion();
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(500);
-                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
-                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentMedicTask.WaitForCompletion();
+                currentPatientTask.WaitForCompletion();
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(500);
-                medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
-                patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None).WaitForCompletion();
+                currentMedicTask = medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentPatientTask = patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_pumpchest", 8f, AnimationFlags.None);
+                currentMedicTask.WaitForCompletion();
+                currentPatientTask.WaitForCompletion();
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(1000);
