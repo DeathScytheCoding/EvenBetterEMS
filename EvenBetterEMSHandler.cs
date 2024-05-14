@@ -278,7 +278,7 @@ namespace EvenBetterEMS
 
         private static void drivingTasks()
         {
-            Rage.Task drivingTask = medicPed.Tasks.DriveToPosition(location, 30f, VehicleDrivingFlags.Emergency);
+            Rage.Task drivingTask = medicPed.Tasks.DriveToPosition(location, 20f, VehicleDrivingFlags.Emergency);
             if (!hasWarped)
             {
                 GameFiber.Wait(3000);
@@ -314,24 +314,31 @@ namespace EvenBetterEMS
             if (patientPed.IsDead)
             {
                 patientPed.Health = (patientPed.MaxHealth)/2;
-                patientPed.Resurrect();               
-
+                patientPed.Resurrect();
+                GameFiber.Wait(500);
                 /*
                 float patientZ = patientPed.Position.Z;
                 patientPed.SetPositionZ(patientZ + 10);
                 patientPed.SetPositionWithSnap(medicPed.Position);
                 */
                 Game.LogTrivial(patientPed.Heading.ToString());
+                patientPed.IsCollisionProof = true;
+                medicPed.IsCollisionProof = true;
+                //patientPed.AttachTo(medicPed, 0, 0, 0); Maybe this for attaching during CPR animations/stretcher?
+
                 patientPed.SetRotationYaw(medicPed.Rotation.Yaw + 180f);
-                
-                patientPed.SetPositionX(medicPed.Position.X + .5f);
-                patientPed.SetPositionY(medicPed.Position.Y);
+
+                medicPed.SetRotationYaw(0);
+                patientPed.SetPositionZ(medicPed.Position.Z);
+                patientPed.SetPositionX(medicPed.Position.X + .4f);
+                patientPed.SetPositionY(medicPed.Position.Y + .65f);
+                patientPed.SetRotationYaw(180f);
 
                 Game.LogTrivial(patientPed.Position.ToString());
 
                 patientPed.Tasks.ClearImmediately();
 
-                GameFiber.Wait(1000);
+                
 
                 //add currentMedicTask and currentPatientTask Rage.Task and move waitforcompletion below both animations
 
