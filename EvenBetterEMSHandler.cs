@@ -38,7 +38,6 @@ namespace EvenBetterEMS
         private static Vector3 spawnPoint;
         private static Vector3 parkPosition;
         private static Vector3 location;
-        private static Vector3 directionToPlayer;
         private static float parkHeading;
         private static Vehicle ambul;
         private static Blip ambulBlip;
@@ -53,6 +52,12 @@ namespace EvenBetterEMS
         private static int prob_patientLivesIfDead = 50;
         private static int prob_stabileIfAlive = 70;
         private static int prob_patientLivesIfAlive = 70;
+
+        //randoms
+        private static Random r_livesIfDead = new Random();
+
+        //outcomes
+        private static bool b_aliveIfDead;
 
         //Keybinds
         private static readonly Keys KeyBinding_menuKey = Keys.F6;
@@ -130,8 +135,7 @@ namespace EvenBetterEMS
                 {
                     Game.DisplaySubtitle("You: Go ahead and lay down, the medic will be here ASAP.");
                     GameFiber.Wait(2000);
-                    patientPed.Tasks.PlayAnimation("move_injured_ground", "back_outro", 8f, AnimationFlags.None).WaitForCompletion();
-                    patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_chestpump_idle", -1f, AnimationFlags.Loop);
+                    patientPed.Tasks.PlayAnimation("combat@damage@rb_writhe", "rb_writhe_loop", -1f, AnimationFlags.Loop);
                 }
                 
                 callEMS();
@@ -305,9 +309,22 @@ namespace EvenBetterEMS
 
         private static void medicTasks()
         {
+            patientPed.KeepTasks = true;
+
             medicPed.Tasks.LeaveVehicle(LeaveVehicleFlags.None).WaitForCompletion(5000);
             
-            medicPed.Tasks.GoToOffsetFromEntity(patientPed, 0f, 0f, 10f).WaitForCompletion();
+            medicPed.Tasks.GoToOffsetFromEntity(patientPed, .1f, 0f, 10f).WaitForCompletion();
+
+            if (r_livesIfDead.NextDouble() < prob_aliveIfDead)
+            {
+                b_aliveIfDead = true;
+            }
+            else
+            {
+                b_aliveIfDead = false;
+            }
+
+            Game.LogTrivial(b_aliveIfDead ? "Patient is: alive!" : "Patient is: dead :(");
 
             Game.DisplaySubtitle("Medic: Give us some room, I'm goin' in.");
 
@@ -315,32 +332,20 @@ namespace EvenBetterEMS
             {
                 patientPed.Health = (patientPed.MaxHealth)/2;
                 patientPed.Resurrect();
-                GameFiber.Wait(500);
-                /*
-                float patientZ = patientPed.Position.Z;
-                patientPed.SetPositionZ(patientZ + 10);
-                patientPed.SetPositionWithSnap(medicPed.Position);
-                */
-                Game.LogTrivial(patientPed.Heading.ToString());
-                patientPed.IsCollisionProof = true;
-                medicPed.IsCollisionProof = true;
-                //patientPed.AttachTo(medicPed, 0, 0, 0); Maybe this for attaching during CPR animations/stretcher?
-
-                patientPed.SetRotationYaw(medicPed.Rotation.Yaw + 180f);
-
-                medicPed.SetRotationYaw(0);
-                patientPed.SetPositionZ(medicPed.Position.Z);
-                patientPed.SetPositionX(medicPed.Position.X + .4f);
-                patientPed.SetPositionY(medicPed.Position.Y + .65f);
-                patientPed.SetRotationYaw(180f);
-
-                Game.LogTrivial(patientPed.Position.ToString());
+                GameFiber.Wait(250);
 
                 patientPed.Tasks.ClearImmediately();
 
-                
+                patientPed.IsCollisionProof = true;
+                medicPed.IsCollisionProof = true;
 
-                //add currentMedicTask and currentPatientTask Rage.Task and move waitforcompletion below both animations
+                //patientPed.AttachTo(medicPed, 0, 0, 0); Use this for attaching during stretcher animation
+
+                medicPed.SetRotationYaw(0);
+                patientPed.SetPositionZ(medicPed.Position.Z);
+                patientPed.SetPositionX(medicPed.Position.X + .35f);
+                patientPed.SetPositionY(medicPed.Position.Y + .7f);
+                patientPed.SetRotationYaw(180f);    
 
                 Rage.Task currentMedicTask;
                 Rage.Task currentPatientTask;
@@ -441,7 +446,7 @@ namespace EvenBetterEMS
 
                 medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_success", 8f, AnimationFlags.None);
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_success", 8f, AnimationFlags.None);
-                GameFiber.Wait(25000);
+                GameFiber.Wait(22000);
 
                 double percentageOfHealth = .5;
                 double patientMaxHealth = (double)patientPed.MaxHealth;
