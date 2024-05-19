@@ -23,6 +23,11 @@ namespace EvenBetterEMS
         public static List<Patient> PublishedCases { get; set; } = new List<Patient>();
         public static bool LoadingXMLFileCases { get; set; } = true;
 
+        //Keybinds
+        public static Keys openHospitalKey = Keys.F6;
+        public static Keys openHospitalModifierKey = Keys.None;
+
+        //mainLoop
         public static void hospitalSystemMainLoop()
         {
             GameFiber.StartNew(delegate
@@ -54,23 +59,23 @@ namespace EvenBetterEMS
             {
                 XDocument xdoc = XDocument.Load(File);
                 char[] trim = new char[] { '\'', '\"', ' ' };
-                List<Patient> AllCourtCases = xdoc.Descendants("CourtCase").Select(x => new Patient()
+                List<Patient> AllPatients = xdoc.Descendants("Patient").Select(x => new Patient()
                 {
                     patientName = ((string)x.Element("patientName").Value).Trim(trim),
                     wasDead = bool.Parse(((string)x.Element("wasDead").Value).Trim(trim)),
-                    wasStable = bool.Parse(((string)x.Element("wasDead").Value).Trim(trim)),
+                    wasStable = bool.Parse(((string)x.Element("wasStable").Value).Trim(trim)),
+                    causeOfDeath = ((string)x.Element("causeOfDeath").Value).Trim(trim),
+                    caseTime = DateTime.FromBinary(long.Parse(x.Element("caseTime").Value)),
                     probWasAlive = int.Parse(x.Element("probWasAlive") != null ? ((string)x.Element("probWasAlive").Value).Trim(trim) : "100"),
                     probWasDead = int.Parse(x.Element("probWasDead") != null ? ((string)x.Element("probWasDead").Value).Trim(trim) : "100"),
-                    caseTime = DateTime.FromBinary(long.Parse(x.Element("caseTime").Value)),
-                    causeOfDeath = ((string)x.Element("causeOfDeath").Value).Trim(trim),
                     caseResult = bool.Parse(((string)x.Element("caseResult").Value).Trim(trim)),
                     resultPublishTime = DateTime.FromBinary(long.Parse(x.Element("resultPublishTime").Value)),
-                    resultsPublished = bool.Parse(((string)x.Element("resultPublished").Value).Trim(trim)),
-                    resultsNotifShown = bool.Parse(((string)x.Element("ResultsPublishedNotificationShown").Value).Trim(trim))
+                    resultsPublished = bool.Parse(((string)x.Element("resultsPublished").Value).Trim(trim)),
+                    resultsNotifShown = bool.Parse(((string)x.Element("resultsNotifShown").Value).Trim(trim))
 
                 }).ToList<Patient>();
 
-                foreach (Patient patient in AllCourtCases)
+                foreach (Patient patient in AllPatients)
                 {
                     patient.addToHospitalMenuAndLists();
                 }
@@ -98,16 +103,16 @@ namespace EvenBetterEMS
             deleteCaseFromXMLFile(PatientsFilePath, patient);
             if (hospitalSystem.PublishedCases.Contains(patient))
             {
-                if (Menus.publishedResultsList.Items.Count == 1) { Menus.publishedResultsList.Items.Add(new TabItem(" ")); patient.resultsMenuCleared = false; }
+                if (Menus.publishedResultsList.Items.Count == 1) { Menus.publishedResultsList.Items.Add(new TabItem(" ")); Patient.resultsMenuCleared = false; }
                 Menus.publishedResultsList.Items.RemoveAt(hospitalSystem.PublishedCases.IndexOf(patient));
                 hospitalSystem.PublishedCases.Remove(patient);
 
             }
-            if (hospitalSystem.PublishedCases.Contains(patient))
+            if (hospitalSystem.PendingCases.Contains(patient))
             {
-                if (Menus.pendingResultsList.Items.Count == 1) { Menus.pendingResultsList.Items.Add(new TabItem(" ")); patient.pendingResultsMenuCleared = false; }
+                if (Menus.pendingResultsList.Items.Count == 1) { Menus.pendingResultsList.Items.Add(new TabItem(" ")); Patient.pendingResultsMenuCleared = false; }
                 Menus.pendingResultsList.Items.RemoveAt(hospitalSystem.PublishedCases.IndexOf(patient));
-                hospitalSystem.PublishedCases.Remove(patient);
+                hospitalSystem.PendingCases.Remove(patient);
 
             }
         }
@@ -124,7 +129,7 @@ namespace EvenBetterEMS
                 XElement EvenBetterEMSElement = xdoc.Element("EvenBetterEMS");
                 XElement caseElement = new XElement("Patient",
                     new XAttribute("ID", patient.XMLIdentifier),
-                    new XElement("SuspectName", patient.patientName),
+                    new XElement("patientName", patient.patientName),
                     new XElement("wasDead", patient.wasDead.ToString()),
                     new XElement("wasStable", patient.wasStable.ToString()),
                     new XElement("causeOfDeath", patient.causeOfDeath),
@@ -242,8 +247,10 @@ namespace EvenBetterEMS
         {
             DateTime publishTime = DateTime.Now;
             Random rndTime = new Random();
+            int addedTime = rndTime.Next(10, 90);
 
-            publishTime.AddMinutes(rndTime.Next(10, 90));
+            publishTime.AddMinutes(addedTime);
+            Game.LogTrivial("Time added: " + addedTime);
 
             return publishTime;
         }
@@ -262,11 +269,11 @@ namespace EvenBetterEMS
 
         public DateTime resultPublishTime { get; set; }
         public bool resultsPublished { get; set; }
-        public bool resultsNotifShown { get; set; }
+        public bool resultsNotifShown { get; set; } = false;
 
-        public bool pendingResultsMenuCleared {  get; set; }
+        public static bool pendingResultsMenuCleared { get; set; } = false;
 
-        public bool resultsMenuCleared { get; set; }
+        public static bool resultsMenuCleared { get; set; } = false;
 
         private Random random = new Random();
 
@@ -307,7 +314,7 @@ namespace EvenBetterEMS
 
         public void addToHospitalMenuAndLists()
         {
-            if (resultsPublished || DateTime.Now < resultPublishTime) 
+            if (resultsPublished || DateTime.Now > resultPublishTime) 
             {
                 publishCaseResults();
             }
@@ -319,7 +326,7 @@ namespace EvenBetterEMS
 
         public void checkForCaseUpdatedStatus()
         {
-            if (!resultsPublished && DateTime.Now < resultPublishTime) 
+            if (!resultsPublished && DateTime.Now > resultPublishTime) 
             {
                 publishCaseResults();
             }
@@ -361,12 +368,12 @@ namespace EvenBetterEMS
                         GameFiber.StartNew(delegate
                         {
                             GameFiber.Wait(25000);
-                            Game.DisplayNotification("3dtextures", "mpgroundlogo_cops", "~r~Los Santos Hospital", "~b~" + patientName, "~w~" + "A patient you called EMS for has gotten out of surgery. Press F6 to call the hospital."); //Add menu key to top of file
+                            Game.DisplayNotification("3dtextures", "mpgroundlogo_cops", "~r~Los Santos Hospital", "~b~" + patientName, "~w~" + "A patient you called EMS for has gotten out of surgery. Press " + hospitalSystem.openHospitalKey.ToString() + (hospitalSystem.openHospitalModifierKey == Keys.None ? " " : "+" + hospitalSystem.openHospitalModifierKey.ToString() + " ") + "to call the hospital."); //Add menu key to top of file
                         });
                     }
                     else
                     {
-                        Game.DisplayNotification("3dtextures", "mpgroundlogo_cops", "~r~Los Santos Hospital", "~b~" + patientName, "~w~" + "A patient you called EMS for has gotten out of surgery. Press F6 to call the hospital."); //Add menu key to top of file
+                        Game.DisplayNotification("3dtextures", "mpgroundlogo_cops", "~r~Los Santos Hospital", "~b~" + patientName, "~w~" + "A patient you called EMS for has gotten out of surgery. Press " + hospitalSystem.openHospitalKey.ToString() + (hospitalSystem.openHospitalModifierKey == Keys.None ? " " : "+" + hospitalSystem.openHospitalModifierKey.ToString() + " ") + "to call the hospital."); //Add menu key to top of file
                     }
                 }
                 resultsNotifShown = true;
@@ -376,21 +383,29 @@ namespace EvenBetterEMS
 
         private void addToPendingCases()
         {
+            Game.LogTrivial(MenuLabel(false));
+            Game.LogTrivial("1");
             if (!hospitalSystem.PendingCases.Contains(this))
             {
-                if (hospitalSystem.PendingCases.Contains(this))
+                Game.LogTrivial("2");
+                if (hospitalSystem.PublishedCases.Contains(this))
                 {
                     Menus.publishedResultsList.Items.RemoveAt(hospitalSystem.PublishedCases.IndexOf(this));
                     if (Menus.publishedResultsList.Items.Count == 0) { Menus.publishedResultsList.Items.Add(new TabItem(" ")); resultsMenuCleared = false; }
                     Menus.publishedResultsList.Index = 0;
                     hospitalSystem.PublishedCases.Remove(this);
                 }
+                Game.LogTrivial("3");
                 hospitalSystem.PendingCases.Insert(0, this);
+                Game.LogTrivial("4");
                 TabTextItem item = new TabTextItem(MenuLabel(false), "Court Date Pending", MenuLabel(false) + ". ~n~Hearing is for: ~r~" + causeOfDeath + ".~s~~n~ Offence took place on ~b~"
                     + caseTime.ToShortDateString() + "~s~ at ~b~" + caseTime.ToShortTimeString() + "~s~~n~ Hearing date: ~y~" + resultPublishTime.ToShortDateString() + " " + resultPublishTime.ToShortTimeString()
                     + "~n~~n~~y~Select this case and press ~b~Insert ~s~to make the hearing take place immediately, or ~b~Delete ~y~to dismiss it."); //rewrite messages
+                Game.LogTrivial("5");
                 Menus.pendingResultsList.Items.Insert(0, item);
+                Game.LogTrivial("6");
                 Menus.pendingResultsList.RefreshIndex();
+                Game.LogTrivial("7");
 
                 if (!pendingResultsMenuCleared)
                 {

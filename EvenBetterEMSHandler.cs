@@ -74,7 +74,7 @@ namespace EvenBetterEMS
 
              //Start game fibers
              GameFiber.StartNew(processMenus);*/
-            //Menus.InitializeMenus();
+            Menus.initializeMenus();
             hospitalSystem.hospitalSystemMainLoop();
             GameFiber.StartNew(callEMSButtonChecker); 
         }
