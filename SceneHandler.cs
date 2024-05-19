@@ -1,9 +1,11 @@
 ﻿using Rage;
 using System;
+using LSPD_First_Response;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using LSPD_First_Response.Engine.Scripting.Entities;
 
 namespace EvenBetterEMS
 {
@@ -201,7 +203,7 @@ namespace EvenBetterEMS
 
                     double patientMaxHealth = (double)patientPed.MaxHealth;
 
-                    
+
 
                     if (r_stableIfDead.NextDouble() < prob_stableIfDead)
                     {
@@ -220,7 +222,33 @@ namespace EvenBetterEMS
                         b_stableIfDead = false;
                     }
 
+                    Persona patientPersona = LSPD_First_Response.Mod.API.Functions.GetPersonaForPed(patientPed);
+                    string patientName = patientPersona.FullName;
 
+                    Random rndCOD = new Random();
+                    List<string> CODByPed = new List<string>();
+                    List<string> CODByVic = new List<string>();
+                    List<string> CODByOther = new List<string>();
+                    CODByPed.Add("Got shot.");
+                    CODByVic.Add("Got hit by a car.");
+                    CODByOther.Add("Had a heart-attack.");
+
+                    string patientCOD;
+
+                    if (patientPed.HasBeenDamagedByAnyPed)
+                    {
+                        patientCOD = CODByPed[rndCOD.Next(CODByPed.Count)];
+                    }
+                    else if (patientPed.HasBeenDamagedByAnyVehicle)
+                    {
+                        patientCOD = CODByVic[rndCOD.Next(CODByVic.Count)];
+                    }
+                    else
+                    { 
+                        patientCOD = CODByOther[rndCOD.Next(CODByOther.Count)];
+                    }
+
+                    hospitalSystem.createNewCase(patientName, true, b_stableIfDead, (int)(prob_patientLivesIfDead * 100), (int)(prob_patientLivesIfAlive * 100), patientCOD, hospitalSystem.determineOutcome((int)(prob_patientLivesIfAlive*100), (int)(prob_patientLivesIfDead), true));
                     //leaveScene
                 }
                 else //if the patient can't be revived
@@ -232,6 +260,33 @@ namespace EvenBetterEMS
                     GameFiber.Wait(10000);
                     patientPed.Kill();
 
+                    Persona patientPersona = LSPD_First_Response.Mod.API.Functions.GetPersonaForPed(patientPed);
+                    string patientName = patientPersona.FullName;
+
+                    Random rndCOD = new Random();
+                    List<string> CODByPed = new List<string>();
+                    List<string> CODByVic = new List<string>();
+                    List<string> CODByOther = new List<string>();
+                    CODByPed.Add("Got shot.");
+                    CODByVic.Add("Got hit by a car.");
+                    CODByOther.Add("Had a heart-attack.");
+
+                    string patientCOD;
+
+                    if (patientPed.HasBeenDamagedByAnyPed)
+                    {
+                        patientCOD = CODByPed[rndCOD.Next(CODByPed.Count)];
+                    }
+                    else if (patientPed.HasBeenDamagedByAnyVehicle)
+                    {
+                        patientCOD = CODByVic[rndCOD.Next(CODByVic.Count)];
+                    }
+                    else
+                    {
+                        patientCOD = CODByOther[rndCOD.Next(CODByOther.Count)];
+                    }
+                    Game.LogTrivial(patientName + "" + (int)(prob_patientLivesIfAlive * 100) + "" + patientCOD);
+                    hospitalSystem.createNewCase(patientName, true, false, (int)(prob_patientLivesIfDead * 100), (int)(prob_patientLivesIfAlive * 100), DateTime.Now, patientCOD, false, DateTime.Now, false);
                     //leaveScene
                 }
 

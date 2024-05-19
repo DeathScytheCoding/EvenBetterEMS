@@ -56,24 +56,26 @@ namespace EvenBetterEMS
         internal static void mainLoop()
         {
             Game.LogTrivial("EvenBetterEMS.Mainloop started");
-           /* EvenBetterMenus = new MenuPool();
-            mainMenu = new UIMenu("EvenBetterEMS", "EvenEvenBetter coming soon!");
-            callHospitalMenu = new UIMenu("Call Hospital", "Check on past patients.");
-            settingsMenu = new UIMenu("Settings", "The place where all the ini goods stay.");
+            /* EvenBetterMenus = new MenuPool();
+             mainMenu = new UIMenu("EvenBetterEMS", "EvenEvenBetter coming soon!");
+             callHospitalMenu = new UIMenu("Call Hospital", "Check on past patients.");
+             settingsMenu = new UIMenu("Settings", "The place where all the ini goods stay.");
 
-            {
-                var callHospitalMenuButton = new UIMenuItem("Call Hospital");
-                var settingsMenuButton = new UIMenuItem("Settings");
+             {
+                 var callHospitalMenuButton = new UIMenuItem("Call Hospital");
+                 var settingsMenuButton = new UIMenuItem("Settings");
 
-                mainMenu.AddItems(callHospitalMenuButton, settingsMenuButton);
-                mainMenu.BindMenuToItem(callHospitalMenu, callHospitalMenuButton);
-                mainMenu.BindMenuToItem(settingsMenu, settingsMenuButton);
-            }
+                 mainMenu.AddItems(callHospitalMenuButton, settingsMenuButton);
+                 mainMenu.BindMenuToItem(callHospitalMenu, callHospitalMenuButton);
+                 mainMenu.BindMenuToItem(settingsMenu, settingsMenuButton);
+             }
 
-            EvenBetterMenus.Add(mainMenu, callHospitalMenu, settingsMenu);
+             EvenBetterMenus.Add(mainMenu, callHospitalMenu, settingsMenu);
 
-            //Start game fibers
-            GameFiber.StartNew(processMenus);*/
+             //Start game fibers
+             GameFiber.StartNew(processMenus);*/
+            //Menus.InitializeMenus();
+            hospitalSystem.hospitalSystemMainLoop();
             GameFiber.StartNew(callEMSButtonChecker); 
         }
 
