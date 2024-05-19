@@ -56,7 +56,7 @@ namespace EvenBetterEMS
         internal static void mainLoop()
         {
             Game.LogTrivial("EvenBetterEMS.Mainloop started");
-            EvenBetterMenus = new MenuPool();
+           /* EvenBetterMenus = new MenuPool();
             mainMenu = new UIMenu("EvenBetterEMS", "EvenEvenBetter coming soon!");
             callHospitalMenu = new UIMenu("Call Hospital", "Check on past patients.");
             settingsMenu = new UIMenu("Settings", "The place where all the ini goods stay.");
@@ -73,7 +73,7 @@ namespace EvenBetterEMS
             EvenBetterMenus.Add(mainMenu, callHospitalMenu, settingsMenu);
 
             //Start game fibers
-            GameFiber.StartNew(processMenus);
+            GameFiber.StartNew(processMenus);*/
             GameFiber.StartNew(callEMSButtonChecker); 
         }
 
@@ -122,7 +122,7 @@ namespace EvenBetterEMS
                 {
                     Game.DisplaySubtitle("~b~You~w~: Go ahead and lay down, the medic will be here ASAP.");
                     GameFiber.Wait(2000);
-                    patientPed.Tasks.PlayAnimation("combat@damage@rb_writhe", "rb_writhe_loop", -1f, AnimationFlags.Loop);
+                    patientPed.Tasks.PlayAnimation("combat@damage@writheidle_a", "writhe_idle_a", -1f, AnimationFlags.Loop);
                 }
                 
                 callEMS();
@@ -207,7 +207,9 @@ namespace EvenBetterEMS
                     EMSGameTimer = true;
                     GameFiber.Wait(10000);
                     EMSGameTimer = false;
-                } else if (Game.IsKeyDown(KeyBinding_callEMSKey) && EMSGameTimer)
+                } 
+
+                if (Game.IsKeyDown(KeyBinding_callEMSKey) && EMSGameTimer)
                 {
                     Game.DisplayHelp("You must wait 10 seconds before calling EMS again.");
                 }

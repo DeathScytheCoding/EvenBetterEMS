@@ -67,9 +67,9 @@ namespace EvenBetterEMS
 
             Game.DisplaySubtitle("~r~Medic~w~: Give us some room, I'm goin' in.");
 
-            if (patientPed.IsDead)
+            if (patientPed.IsDead) //if patient is a dead ped
             {
-                if (r_livesIfDead.NextDouble() < prob_aliveIfDead)
+                if (r_livesIfDead.NextDouble() < prob_aliveIfDead) //roll probability of dead ped getting revived.
                 {
                     b_aliveIfDead = true;
                 }
@@ -190,7 +190,7 @@ namespace EvenBetterEMS
                 patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_def", "cpr_pumpchest_idle", 8f, AnimationFlags.None);
                 GameFiber.Wait(1000);
 
-                //roll prob_patientLivesIfDead
+                //if they will get revived
                 if (b_aliveIfDead)
                 {
                     medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_success", 8f, AnimationFlags.None);
@@ -199,39 +199,45 @@ namespace EvenBetterEMS
 
                     Game.DisplayNotification("Animation over.");
 
-                    double percentageOfHealth = .5;
                     double patientMaxHealth = (double)patientPed.MaxHealth;
 
-                    patientPed.Health = (int)(patientMaxHealth * percentageOfHealth);
+                    
 
                     if (r_stableIfDead.NextDouble() < prob_stableIfDead)
                     {
+                        double percentageOfHealth = .5;
+                        patientPed.Health = (int)(patientMaxHealth * percentageOfHealth);
                         Game.DisplaySubtitle("~r~Medic~w~: It looks like they're ~g~awake ~w~and ~g~stable~w~. We're gonna head to the hospital.");
                         Game.DisplayHelp("If you'd like to check on a patient later, hit ~r~" + EvenBetterEMSHandler.KeyBinding_menuKey.ToString() + " ~w~to call the ~r~hospital~w~. Here you can check on any patients you've called EMS for ~y~10 minutes ~w~after the incident to get an ~g~incident report~w~.");
                         b_stableIfDead = true;
                     }
                     else
                     {
+
+                        double percentageOfHealth = .3;
+                        patientPed.Health = (int)(patientMaxHealth * percentageOfHealth);
                         Game.DisplaySubtitle("~r~Medic~w~: It looks like they're ~g~awake but in ~r~critical condition~w~. I better get them back to a hospital.");
                         b_stableIfDead = false;
                     }
 
 
-                    Game.LogTrivial(b_stableIfAlive.ToString());
+                    //leaveScene
                 }
-                else
+                else //if the patient can't be revived
                 {
                     medicPed.Tasks.PlayAnimation("mini@cpr@char_a@cpr_str", "cpr_fail", 8f, AnimationFlags.None);
                     patientPed.Tasks.PlayAnimation("mini@cpr@char_b@cpr_str", "cpr_fail", 8f, AnimationFlags.None);
                     GameFiber.Wait(5000);
                     Game.DisplaySubtitle("~r~Medic~w~: It's no use... They're gone. Better call the coroner.");
-                    GameFiber.Wait(13000);
+                    GameFiber.Wait(10000);
                     patientPed.Kill();
+
+                    //leaveScene
                 }
 
                 //Now is when the leaveScene function would run.
             }
-            else
+            else //if the patient is an alive ped
             {
                 medicPed.Tasks.PlayAnimation("amb@code_human_police_crowd_control@idle_b", "idle_d", 8f, AnimationFlags.None);
                 GameFiber.Wait(3000);
@@ -245,10 +251,10 @@ namespace EvenBetterEMS
                 GameFiber.Wait(2000);
                 medicPed.Tasks.Clear();
 
-                if (r_stableIfAlive.NextDouble() < prob_stableIfAlive)
+                if (r_stableIfAlive.NextDouble() < prob_stableIfAlive) //roll to decide if patient will be stable.
                 {
                     Game.DisplaySubtitle("~r~Medic~w~: It looks like they're ~g~stable~w~. We should get them checked out at the hospital, though.");
-                    double percentageOfHealth = .85;
+                    double percentageOfHealth = .8;
                     double patientMaxHealth = (double)patientPed.MaxHealth;
 
                     patientPed.Health = (int)(patientMaxHealth * percentageOfHealth);
@@ -264,7 +270,7 @@ namespace EvenBetterEMS
                     b_stableIfAlive = false;
                 }
 
-                //Now is when the leaveScene function would run
+                //leaveScene
             }
         }
     }

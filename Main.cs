@@ -14,6 +14,7 @@ namespace EvenBetterEMS
         public override void Initialize()
         {
             Functions.OnOnDutyStateChanged += OnDutyStateHandler;
+            fileHandler.iniPatientsFile();
             Game.LogTrivial("EvenBetterEMS " + Assembly.GetExecutingAssembly().GetName().Version.ToString() + " has successfully initialized.");
             Game.LogTrivial("Go on duty to fully load EvenBetterEMS!");
             throw new NotImplementedException();
