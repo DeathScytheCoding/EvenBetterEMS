@@ -84,18 +84,17 @@ namespace EvenBetterEMS
 
                 patientPed.Health = (patientPed.MaxHealth) / 2;
                 patientPed.Resurrect();
-                GameFiber.Wait(250);
-
                 patientPed.Tasks.ClearImmediately();
+                GameFiber.Wait(200);
 
                 patientPed.IsCollisionProof = true;
                 medicPed.IsCollisionProof = true;
 
                 medicPed.SetRotationYaw(0);
                 patientPed.SetPositionZ(medicPed.Position.Z);
-                patientPed.SetPositionX(medicPed.Position.X + .35f);
-                patientPed.SetPositionY(medicPed.Position.Y + .7f);
-                patientPed.SetRotationYaw(180f);
+                patientPed.SetPositionX(medicPed.Position.X - 1f);
+                patientPed.SetPositionY(medicPed.Position.Y + .5f);
+                patientPed.SetRotationYaw(90f);
 
                 Rage.Task currentMedicTask;
                 Rage.Task currentPatientTask;
@@ -286,7 +285,7 @@ namespace EvenBetterEMS
                         patientCOD = CODByOther[rndCOD.Next(CODByOther.Count)];
                     }
                     Game.LogTrivial(patientName + "" + (int)(prob_patientLivesIfAlive * 100) + "" + patientCOD);
-                    hospitalSystem.createNewCase(patientName, true, false, (int)(prob_patientLivesIfDead * 100), (int)(prob_patientLivesIfAlive * 100), DateTime.Now, patientCOD, false, DateTime.Now, false);
+                    hospitalSystem.createNewCase(patientName, true, false, (int)(prob_patientLivesIfDead * 100), (int)(prob_patientLivesIfAlive * 100), DateTime.Now, patientCOD, false, DateTime.Now.AddMinutes(1), false);
                     //leaveScene
                 }
 

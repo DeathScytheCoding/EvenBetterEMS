@@ -202,7 +202,7 @@ namespace EvenBetterEMS
 
         public static void createNewCase(string patientName, bool wasDead, bool wasStable, int probWasDead, int probWasAlive, string causeOfDeath, bool caseResult)
         {
-            createNewCase(patientName, wasDead, wasStable, probWasDead, probWasAlive, DateTime.Now, causeOfDeath, caseResult, determinePublishTime(), false, false);
+            createNewCase(patientName, wasDead, wasStable, probWasDead, probWasAlive, DateTime.Now, causeOfDeath, caseResult, determinePublishTime(wasDead, wasStable), false, false);
         }
 
         public static bool determineOutcome(int probWasAlive, int probWasDead, bool wasDead)
@@ -243,16 +243,30 @@ namespace EvenBetterEMS
             }
         }
 
-        public static DateTime determinePublishTime()
+        public static DateTime determinePublishTime(bool wasDead, bool wasStable)
         {
-            DateTime publishTime = DateTime.Now;
             Random rndTime = new Random();
-            int addedTime = rndTime.Next(10, 90);
+            int addedTime;
+            if (wasDead && !wasStable)
+            {
+                addedTime = rndTime.Next(60, 90);
+            }
+            else if(wasDead && wasStable)
+            {
+                addedTime = rndTime.Next(30, 60);
+            }
+            else if(!wasDead && wasStable)
+            {
+                addedTime = rndTime.Next(20, 45);
+            }
+            else
+            {
+                addedTime = rndTime.Next(10, 30);
+            }
+            
+            Game.LogTrivial("Time added: " + DateTime.Now.AddMinutes(addedTime));
 
-            publishTime.AddMinutes(addedTime);
-            Game.LogTrivial("Time added: " + addedTime);
-
-            return publishTime;
+            return DateTime.Now.AddMinutes(addedTime);
         }
     }
 
@@ -292,7 +306,7 @@ namespace EvenBetterEMS
             {
                 s += "~n~";
             }
-            s += "~b~" + caseTime.ToBinary().ToString();
+            s += "~b~" + caseTime.ToShortDateString();
             return s;
         }
 
@@ -345,11 +359,11 @@ namespace EvenBetterEMS
                 }
                 hospitalSystem.PublishedCases.Insert(0, this);
 
-                TabTextItem item = new TabTextItem(MenuLabel(false), "Court Result", MenuLabel(false) + "~s~. ~r~" + causeOfDeath
-                    + "~s~~n~ " + (caseResult ? rollAliveMsgs() : rollDeadMsgs())
-                    + "~s~~n~ Offence took place on ~b~" + caseTime.ToShortDateString() + "~s~ at ~b~" + caseTime.ToShortTimeString()
-                    + "~s~.~n~ Hearing was on ~b~" + resultPublishTime.ToShortDateString() + "~s~ at ~b~" + resultPublishTime.ToShortTimeString() + "."
-                    + "~n~~n~~y~Select this case and press ~b~Delete ~y~to dismiss it."); //rewrite messages
+                TabTextItem item = new TabTextItem(MenuLabel(false), "Patient Outcome", "~b~Patient: ~r~" + patientName + "~n~~b~Cause of death: ~r~" + causeOfDeath
+                    + "~n~" + (caseResult ? rollAliveMsgs() : rollDeadMsgs())
+                    + "~n~~n~~w~Patient treated at: ~b~" + caseTime.ToShortDateString() + "~w~ at ~b~" + caseTime.ToShortTimeString()
+                    + "~n~~w~" + (caseResult ? "Surgery ended on: ~b~" : "Time of death: ~b~") + resultPublishTime.ToShortDateString() + "~w~ at ~b~" + resultPublishTime.ToShortTimeString()
+                    + "~n~~n~~w~Select this case and press ~r~Delete ~w~to dismiss it.");
 
                 Menus.publishedResultsList.Items.Insert(0, item);
                 Menus.publishedResultsList.RefreshIndex();
@@ -368,12 +382,12 @@ namespace EvenBetterEMS
                         GameFiber.StartNew(delegate
                         {
                             GameFiber.Wait(25000);
-                            Game.DisplayNotification("3dtextures", "mpgroundlogo_cops", "~r~Los Santos Hospital", "~b~" + patientName, "~w~" + "A patient you called EMS for has gotten out of surgery. Press " + hospitalSystem.openHospitalKey.ToString() + (hospitalSystem.openHospitalModifierKey == Keys.None ? " " : "+" + hospitalSystem.openHospitalModifierKey.ToString() + " ") + "to call the hospital."); //Add menu key to top of file
+                            Game.DisplayNotification("3dtextures", "mpgroundlogo_cops", "~r~Los Santos Hospital", "~b~" + MenuLabel(false), "~w~" + "A patient you called EMS for has gotten out of surgery. Press " + hospitalSystem.openHospitalKey.ToString() + (hospitalSystem.openHospitalModifierKey == Keys.None ? " " : "+" + hospitalSystem.openHospitalModifierKey.ToString() + " ") + "to call the hospital."); //Add menu key to top of file
                         });
                     }
                     else
                     {
-                        Game.DisplayNotification("3dtextures", "mpgroundlogo_cops", "~r~Los Santos Hospital", "~b~" + patientName, "~w~" + "A patient you called EMS for has gotten out of surgery. Press " + hospitalSystem.openHospitalKey.ToString() + (hospitalSystem.openHospitalModifierKey == Keys.None ? " " : "+" + hospitalSystem.openHospitalModifierKey.ToString() + " ") + "to call the hospital."); //Add menu key to top of file
+                        Game.DisplayNotification("3dtextures", "mpgroundlogo_cops", "~r~Los Santos Hospital", "~b~" + MenuLabel(false), "~w~" + "A patient you called EMS for has gotten out of surgery. Press " + hospitalSystem.openHospitalKey.ToString() + (hospitalSystem.openHospitalModifierKey == Keys.None ? " " : "+" + hospitalSystem.openHospitalModifierKey.ToString() + " ") + "to call the hospital."); //Add menu key to top of file
                     }
                 }
                 resultsNotifShown = true;
@@ -383,11 +397,9 @@ namespace EvenBetterEMS
 
         private void addToPendingCases()
         {
-            Game.LogTrivial(MenuLabel(false));
-            Game.LogTrivial("1");
+            
             if (!hospitalSystem.PendingCases.Contains(this))
             {
-                Game.LogTrivial("2");
                 if (hospitalSystem.PublishedCases.Contains(this))
                 {
                     Menus.publishedResultsList.Items.RemoveAt(hospitalSystem.PublishedCases.IndexOf(this));
@@ -395,29 +407,48 @@ namespace EvenBetterEMS
                     Menus.publishedResultsList.Index = 0;
                     hospitalSystem.PublishedCases.Remove(this);
                 }
-                Game.LogTrivial("3");
                 hospitalSystem.PendingCases.Insert(0, this);
-                Game.LogTrivial("4");
-                TabTextItem item = new TabTextItem(MenuLabel(false), "Court Date Pending", MenuLabel(false) + ". ~n~Hearing is for: ~r~" + causeOfDeath + ".~s~~n~ Offence took place on ~b~"
-                    + caseTime.ToShortDateString() + "~s~ at ~b~" + caseTime.ToShortTimeString() + "~s~~n~ Hearing date: ~y~" + resultPublishTime.ToShortDateString() + " " + resultPublishTime.ToShortTimeString()
-                    + "~n~~n~~y~Select this case and press ~b~Insert ~s~to make the hearing take place immediately, or ~b~Delete ~y~to dismiss it."); //rewrite messages
-                Game.LogTrivial("5");
+                TabTextItem item = new TabTextItem(MenuLabel(false), "Patient Status Pending", "~b~Patient: ~r~" + patientName + "~n~~w~Injury/COD: ~r~" + causeOfDeath + "~n~~n~~w~Patient treated on: ~b~"
+                    + caseTime.ToShortDateString() + "~w~ at ~b~" + caseTime.ToShortTimeString() + "~n~" + timeEstimate()
+                    + "~n~~n~~w~Select this case and press ~y~Insert ~w~to make the hearing take place immediately, or ~r~Delete ~w~to dismiss it.");
                 Menus.pendingResultsList.Items.Insert(0, item);
-                Game.LogTrivial("6");
                 Menus.pendingResultsList.RefreshIndex();
-                Game.LogTrivial("7");
 
                 if (!pendingResultsMenuCleared)
                 {
-                    Game.LogTrivial("Empty items, clearing menu at index 1.");
+                    Game.LogTrivialDebug("Empty items, clearing menu at index 1.");
                     Menus.pendingResultsList.Items.RemoveAt(1);
                     pendingResultsMenuCleared = true;
                 }
                 if (!hospitalSystem.LoadingXMLFileCases)
                 {
-                    Game.DisplayNotification("3dtextures", "mpgroundlogo_cops", "~r~Los Santos Hospital", "~b~" + patientName, "~w~You're now following a new pending patient case. Press ~b~F6 to call the hospital.~r~.");
+                    Game.DisplayNotification("3dtextures", "mpgroundlogo_cops", "~r~Los Santos Hospital", "~b~" + MenuLabel(false), "~w~You're now following a new pending patient case. Press ~b~F6 to call the hospital.~r~.");
                 }
                 resultsPublished = false;
+            }
+        }
+
+        private string timeEstimate()
+        {
+            if(DateTime.Now.AddMinutes(10).CompareTo(resultPublishTime) == 1)
+            {
+                return "Check back in about 10 minutes to see if the patient is out of surgery.";
+            }
+            else if(DateTime.Now.AddMinutes(30).CompareTo(resultPublishTime) == 1)
+            {
+                return "Check again in about 30 minutes to check the patient's outcome.";
+            }
+            else if(DateTime.Now.AddMinutes(45).CompareTo(resultPublishTime) == 1) 
+            {
+                return "They're in surgery, check again in about 45 minutes to see if the patient made it.";
+            }
+            else if(DateTime.Now.AddMinutes(60).CompareTo(resultPublishTime) == 1)
+            {
+                return "They looked pretty rough, you'll probably want to check back in about an hour if you want to know their condition.";
+            }
+            else
+            {
+                return "The patient was in very bad condition. It'll be a while before they get out of surgery... if they get out of surgery.";
             }
         }
 
@@ -431,8 +462,8 @@ namespace EvenBetterEMS
             List<string> caseResultAliveMsgs = new List<string>();
             Random rnd = new Random();
 
-            caseResultAliveMsgs.Add(MenuLabel(false) + " pulled through and will be OK!");
-            caseResultAliveMsgs.Add("The doctor's say that " + MenuLabel(false) + "is gonna make it!");
+            caseResultAliveMsgs.Add("~w~" + patientName + " pulled through and ~g~will be OK!");
+            caseResultAliveMsgs.Add("~w~The doctor's say that " + patientName + " ~g~is gonna make it!");
 
             return caseResultAliveMsgs[rnd.Next(caseResultAliveMsgs.Count)];
         }
@@ -442,8 +473,8 @@ namespace EvenBetterEMS
             List<string> caseResultDeadMsgs = new List<string>();
             Random rnd = new Random();
 
-            caseResultDeadMsgs.Add("I'm so sorry... " + MenuLabel(false) + " didn't make it.");
-            caseResultDeadMsgs.Add("The doctors did everything they could but... they're gone.");
+            caseResultDeadMsgs.Add("~w~I'm so sorry... " + patientName + " ~r~didn't make it.");
+            caseResultDeadMsgs.Add("~w~The doctors did everything they could but... ~r~they're gone.");
 
             return caseResultDeadMsgs[rnd.Next(caseResultDeadMsgs.Count)];
         }
