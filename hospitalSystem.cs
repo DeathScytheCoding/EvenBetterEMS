@@ -430,19 +430,19 @@ namespace EvenBetterEMS
 
         private string timeEstimate()
         {
-            if(DateTime.Now.AddMinutes(10).CompareTo(resultPublishTime) == 1)
+            if(DateTime.Compare(DateTime.Now.AddMinutes(10), resultPublishTime) > 0)
             {
                 return "Check back in about 10 minutes to see if the patient is out of surgery.";
             }
-            else if(DateTime.Now.AddMinutes(30).CompareTo(resultPublishTime) == 1)
+            else if(DateTime.Compare(DateTime.Now.AddMinutes(30), resultPublishTime) > 0)
             {
                 return "Check again in about 30 minutes to check the patient's outcome.";
             }
-            else if(DateTime.Now.AddMinutes(45).CompareTo(resultPublishTime) == 1) 
+            else if(DateTime.Compare(DateTime.Now.AddMinutes(45), resultPublishTime) > 0) 
             {
                 return "They're in surgery, check again in about 45 minutes to see if the patient made it.";
             }
-            else if(DateTime.Now.AddMinutes(60).CompareTo(resultPublishTime) == 1)
+            else if(DateTime.Compare(DateTime.Now.AddMinutes(60), resultPublishTime) > 0)
             {
                 return "They looked pretty rough, you'll probably want to check back in about an hour if you want to know their condition.";
             }
