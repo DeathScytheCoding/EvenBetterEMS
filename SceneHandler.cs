@@ -46,7 +46,7 @@ namespace EvenBetterEMS
                 GameFiber.Wait(5000);
                 GameFiber.StartNew(EvenBetterEMSHandler.parkHereChecker);
             }
-
+            
             drivingTask.WaitForCompletion();
             ambul.IsSirenSilent = true;
 
@@ -87,15 +87,15 @@ namespace EvenBetterEMS
                     patientPed.Resurrect();
                     patientPed.Tasks.ClearImmediately();
                     GameFiber.Wait(200);
-
-                    patientPed.IsCollisionProof = true;
-                    medicPed.IsCollisionProof = true;
-
-                    medicPed.SetRotationYaw(0);
-                    patientPed.SetPositionZ(medicPed.Position.Z);
-                    patientPed.SetPositionX(medicPed.Position.X + .6f);
-                    patientPed.SetPositionY(medicPed.Position.Y + .1f);
+                    
+                    /*patientPed.SetPositionZ(medicPed.Position.Z);
+                    patientPed.SetPositionX(medicPed.Position.X);
+                    patientPed.SetPositionY(medicPed.Position.Y);*/
                     patientPed.SetRotationYaw(90f);
+                    medicPed.SetRotationYaw(0);
+                    medicPed.SetPositionZ(patientPed.Position.Z);
+                    medicPed.SetPositionX(patientPed.Position.X + .25f);
+                    medicPed.SetPositionY(patientPed.Position.Y - 1.1f);
 
                     Rage.Task currentMedicTask;
                     Rage.Task currentPatientTask;
