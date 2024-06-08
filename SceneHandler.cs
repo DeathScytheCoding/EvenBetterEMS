@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using LSPD_First_Response.Engine.Scripting.Entities;
+using System.Security.Cryptography.X509Certificates;
 
 namespace EvenBetterEMS
 {
@@ -32,6 +33,7 @@ namespace EvenBetterEMS
         private static bool b_stableIfDead;
         private static bool b_stableIfAlive;
 
+        //Medic driving tasks function
         public static void drivingTasks(Ped medicPed, Ped patientPed, Vector3 location, Vehicle ambul)
         {
             Rage.Task drivingTask = medicPed.Tasks.DriveToPosition(location, 20f, VehicleDrivingFlags.Emergency);
@@ -59,6 +61,7 @@ namespace EvenBetterEMS
             medicTasks(medicPed, patientPed);
         }
 
+        //Medic animations
         public static void medicTasks(Ped medicPed, Ped patientPed)
         {
             medicPed.Tasks.LeaveVehicle(LeaveVehicleFlags.None).WaitForCompletion(5000);
@@ -202,7 +205,7 @@ namespace EvenBetterEMS
                         double patientMaxHealth = (double)patientPed.MaxHealth;
 
 
-
+                        //roll for patient stability
                         if (r_stableIfDead.NextDouble() < prob_stableIfDead)
                         {
                             double percentageOfHealth = .5;
@@ -223,6 +226,7 @@ namespace EvenBetterEMS
                         Persona patientPersona = LSPD_First_Response.Mod.API.Functions.GetPersonaForPed(patientPed);
                         string patientName = patientPersona.FullName;
 
+                        //Cause of death generator
                         Random rndCOD = new Random();
                         List<string> CODByPed = new List<string>();
                         List<string> CODByVic = new List<string>();
@@ -306,6 +310,7 @@ namespace EvenBetterEMS
                     GameFiber.Wait(2000);
                     medicPed.Tasks.Clear();
 
+                    //roll for patient stability
                     if (r_stableIfAlive.NextDouble() < prob_stableIfAlive) //roll to decide if patient will be stable.
                     {
                         Game.DisplaySubtitle("~r~Medic~w~: It looks like they're ~g~stable~w~. We should get them checked out at the hospital, though.");
@@ -331,7 +336,8 @@ namespace EvenBetterEMS
                         break;
                     }
 
-                    //leaveScene
+                    //Function to pack up and leave the scene
+                    
                     
 
                     /*case null:
@@ -342,6 +348,12 @@ namespace EvenBetterEMS
                     */
 
             }
+        }
+        
+        public static void leaveScene(Ped medicPed, Ped patientPed)
+        {
+            patientPed.Tasks.PlayAnimation("combat@damage@writheidle_a", "writhe_idle_a", -1f, AnimationFlags.Loop);
+            Rage.Object stretcher = new Rage.Object("strykergurney", medicPed.Position.Around(.1f));
         }
     }
 }
