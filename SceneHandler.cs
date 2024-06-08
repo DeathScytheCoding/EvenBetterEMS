@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using LSPD_First_Response.Engine.Scripting.Entities;
 using System.Security.Cryptography.X509Certificates;
+using System.Windows.Forms;
 
 namespace EvenBetterEMS
 {
@@ -15,6 +16,11 @@ namespace EvenBetterEMS
         //definitions
         private static Vector3 parkPosition;
         private static float parkHeading;
+        private static Ped medicPed;
+        private static Ped patientPed;
+        private static Vector3 location;
+        private static Vehicle ambul;
+        private static bool patientWasDead;
 
         //probabilities
         private static double prob_aliveIfDead = .5;
@@ -33,20 +39,41 @@ namespace EvenBetterEMS
         private static bool b_stableIfDead;
         private static bool b_stableIfAlive;
 
+        //Bools to remember if ambulance has been parked or warped already
+        public static bool isParked;
+        public static bool hasWarped = false;
+
+        //Key bindings
+        public static readonly Keys KeyBinding_warpEMSKey = Keys.Divide;
+        public static readonly Keys KeyBinding_parkHere = Keys.Subtract;
+
+        //Initialize variables for scene
+        public static void initialize(Ped intakeMedicPed, Ped intakePatientPed, Vector3 intakeLocation, Vehicle intakeAmbul)
+        {
+            medicPed = intakeMedicPed;
+            patientPed = intakePatientPed;
+            location = intakeLocation;
+            ambul = intakeAmbul;
+
+            patientWasDead = patientPed.IsDead;
+
+            drivingTasks();
+        }
+
         //Medic driving tasks function
-        public static void drivingTasks(Ped medicPed, Ped patientPed, Vector3 location, Vehicle ambul)
+        public static void drivingTasks()
         {
             Rage.Task drivingTask = medicPed.Tasks.DriveToPosition(location, 20f, VehicleDrivingFlags.Emergency);
-            if (!EvenBetterEMSHandler.hasWarped)
+            if (!hasWarped)
             {
                 GameFiber.Wait(3000);
-                GameFiber.StartNew(EvenBetterEMSHandler.warpEMSCloserChecker);
+                GameFiber.StartNew(warpEMSCloserChecker);
             }
 
-            if (!EvenBetterEMSHandler.isParked)
+            if (!isParked)
             {
                 GameFiber.Wait(5000);
-                GameFiber.StartNew(EvenBetterEMSHandler.parkHereChecker);
+                GameFiber.StartNew(parkHereChecker);
             }
             
             drivingTask.WaitForCompletion();
@@ -56,15 +83,18 @@ namespace EvenBetterEMS
             parkHeading = ambul.Heading;
             medicPed.Tasks.ParkVehicle(parkPosition, parkHeading).WaitForCompletion(5000);
 
-            EvenBetterEMSHandler.isParked = true;
+            isParked = true;
 
-            medicTasks(medicPed, patientPed);
+            medicTasks(false);
         }
 
         //Medic animations
-        public static void medicTasks(Ped medicPed, Ped patientPed)
+        public static void medicTasks(bool parkHere)
         {
-            medicPed.Tasks.LeaveVehicle(LeaveVehicleFlags.None).WaitForCompletion(5000);
+            if (!parkHere) 
+            {
+                medicPed.Tasks.LeaveVehicle(LeaveVehicleFlags.None).WaitForCompletion(5000);
+            }
 
             medicPed.Tasks.GoToOffsetFromEntity(patientPed, .1f, 0f, 10f).WaitForCompletion();
 
@@ -72,7 +102,7 @@ namespace EvenBetterEMS
 
             Game.DisplaySubtitle("~r~Medic~w~: Give us some room, I'm goin' in.");
 
-            switch (patientPed.IsDead) //if patient is a dead ped
+            switch (patientWasDead) //if patient is a dead ped
             {
                 case true:
                     if (r_livesIfDead.NextDouble() < prob_aliveIfDead) //roll probability of dead ped getting revived.
@@ -251,7 +281,7 @@ namespace EvenBetterEMS
                         }
 
                         hospitalSystem.createNewCase(patientName, true, b_stableIfDead, (int)(prob_patientLivesIfDead * 100), (int)(prob_patientLivesIfAlive * 100), patientCOD, hospitalSystem.determineOutcome((int)(prob_patientLivesIfAlive * 100), (int)(prob_patientLivesIfDead), true));
-                        //leaveScene
+                        leaveScene(false);
                         break;
                     }
                     else //if the patient can't be revived
@@ -266,7 +296,7 @@ namespace EvenBetterEMS
                         Persona patientPersona = LSPD_First_Response.Mod.API.Functions.GetPersonaForPed(patientPed);
                         string patientName = patientPersona.FullName;
 
-                        Random rndCOD = new Random();
+                        Random rndCOD = new Random(); //figure out how to get cause of death or make random
                         List<string> CODByPed = new List<string>();
                         List<string> CODByVic = new List<string>();
                         List<string> CODByOther = new List<string>();
@@ -290,7 +320,7 @@ namespace EvenBetterEMS
                         }
                         Game.LogTrivial(patientName + "" + (int)(prob_patientLivesIfAlive * 100) + "" + patientCOD);
                         hospitalSystem.createNewCase(patientName, true, false, (int)(prob_patientLivesIfDead * 100), (int)(prob_patientLivesIfAlive * 100), DateTime.Now, patientCOD, false, DateTime.Now.AddMinutes(1), false);
-                        //leaveScene
+                        leaveScene(true);
                         break;
                     }
                 //Now is when the leaveScene function would run.
@@ -320,7 +350,7 @@ namespace EvenBetterEMS
                         patientPed.Health = (int)(patientMaxHealth * percentageOfHealth);
                         b_stableIfAlive = true;
 
-                        //leaveScene
+                        leaveScene(false);
                         break;
                     }
                     else
@@ -332,28 +362,75 @@ namespace EvenBetterEMS
                         patientPed.Health = (int)(patientMaxHealth * percentageOfHealth);
                         b_stableIfAlive = false;
 
-                        //leaveScene
+                        leaveScene(false);
                         break;
                     }
-
-                    //Function to pack up and leave the scene
-                    
-                    
-
-                    /*case null:
-
-                        Game.DisplayNotification("~r~EvenBetterEMS: ~y~Error getting patient status. Check log.~w~");
-                        Game.LogTrivial("patientPed.IsDead = " + patientPed.IsDead + ".patientPed.IsAlive = " + patientPed.IsAlive + ".");
-                        break;
-                    */
-
             }
         }
-        
-        public static void leaveScene(Ped medicPed, Ped patientPed)
+
+        //Function to listen for the "warp EMS closer button" (numpad / by default)
+        public static void warpEMSCloserChecker()
         {
-            patientPed.Tasks.PlayAnimation("combat@damage@writheidle_a", "writhe_idle_a", -1f, AnimationFlags.Loop);
-            Rage.Object stretcher = new Rage.Object("strykergurney", medicPed.Position.Around(.1f));
+            Game.DisplayHelp("EMS taking too long? press / to warp them closer!");
+
+            while (true)
+            {
+                GameFiber.Yield();
+
+                if (Game.IsKeyDown(KeyBinding_warpEMSKey) && ambul.Exists() && !hasWarped)
+                {
+                    Game.DisplayNotification("Warping EMS closer to you!");
+                    Vector3 new_spawnPoint = World.GetNextPositionOnStreet(Game.LocalPlayer.Character.Position.Around(40f));
+                    ambul.SetPositionWithSnap(new_spawnPoint);
+                    drivingTasks();
+                    hasWarped = true;
+                }
+
+                if (Game.IsKeyDown(KeyBinding_warpEMSKey) && !ambul.Exists())
+                {
+                    Game.DisplayHelp("You must call the medics before you can warp them to you!");
+                }
+
+                if (Game.IsKeyDown(KeyBinding_warpEMSKey) && ambul.Exists() && hasWarped)
+                {
+                    Game.DisplayHelp("You have already warped EMS, if they are stuck either hit - to make them park where they are or call EMS again.");
+                }
+            }
+        }
+
+        //Function to listen for button that makes EMS stop and park where they are and continue on foot (- by default)
+        public static void parkHereChecker()
+        {
+            Game.DisplayHelp("Taking too long to park while your patient is bleeding out? Hit - on the numpad to make them park where they are!");
+
+            while (true)
+            {
+                GameFiber.Yield();
+
+                if (Game.IsKeyDown(KeyBinding_parkHere) && ambul.Exists() && !isParked)
+                {
+                    isParked = true;
+
+                    medicPed.Tasks.Clear();
+                    Game.DisplaySubtitle("~r~Medic~w~: This is medic 15, continuing on foot.");
+                    GameFiber.Wait(150);
+                    medicTasks(true);
+                }
+            }
+        }
+
+        //Function to pack up and leave the scene
+        public static void leaveScene(bool isDead)
+        {
+            if(isDead)
+            {
+
+            }
+            else
+            {
+                patientPed.Tasks.PlayAnimation("combat@damage@writheidle_a", "writhe_idle_a", -1f, AnimationFlags.Loop);
+                Rage.Object stretcher = new Rage.Object("strykergurney", medicPed.Position.Around(.1f));
+            }
         }
     }
 }

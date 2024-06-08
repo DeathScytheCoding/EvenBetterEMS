@@ -43,17 +43,12 @@ namespace EvenBetterEMS
         private static Blip ambulBlip;
         private static Ped medicPed;
         private static Ped patientPed;
-        //Bools to remember if ambulance has been parked or warped already
-        public static bool isParked;
-        public static bool hasWarped = false;
         //Game timers
         public static bool EMSGameTimer = false;
 
         //Keybinds
         public static readonly Keys KeyBinding_menuKey = Keys.F6;
         public static readonly Keys KeyBinding_callEMSKey = Keys.OemSemicolon;
-        public static readonly Keys KeyBinding_warpEMSKey = Keys.Divide;
-        public static readonly Keys KeyBinding_parkHere = Keys.Subtract;
 
         //Main plugin functions
         internal static void mainLoop()
@@ -173,7 +168,7 @@ namespace EvenBetterEMS
 
                 ambul.IsSirenOn = true;
 
-                SceneHandler.drivingTasks(medicPed, patientPed, location, ambul);
+                SceneHandler.initialize(medicPed, patientPed, location, ambul);
             }
             else
             {
@@ -197,8 +192,8 @@ namespace EvenBetterEMS
                 ambulBlip.Delete();
             }
 
-            isParked = false;
-            hasWarped = false;
+            SceneHandler.isParked = false;
+            SceneHandler.hasWarped = false;
         }
 
         //Function to listen for the "call EMS button" (; by default)
@@ -229,57 +224,6 @@ namespace EvenBetterEMS
             EMSGameTimer = true;
             GameFiber.Wait(10000);
             EMSGameTimer = false;
-        }
-
-        //Function to listen for the "warp EMS closer button" (numpad / by default)
-        public static void warpEMSCloserChecker()
-        {
-            Game.DisplayHelp("EMS taking too long? press / to warp them closer!");
-
-            while (true)
-            {
-                GameFiber.Yield();
-
-                if (Game.IsKeyDown(KeyBinding_warpEMSKey) && ambul.Exists() && !hasWarped)
-                {
-                    Game.DisplayNotification("Warping EMS closer to you!");
-                    Vector3 new_spawnPoint = World.GetNextPositionOnStreet(Game.LocalPlayer.Character.Position.Around(40f));
-                    ambul.SetPositionWithSnap(new_spawnPoint);
-                    SceneHandler.drivingTasks(medicPed, patientPed, location, ambul);
-                    hasWarped = true;
-                }
-
-                if (Game.IsKeyDown(KeyBinding_warpEMSKey) && !ambul.Exists())
-                {
-                    Game.DisplayHelp("You must call the medics before you can warp them to you!");
-                }
-
-                if (Game.IsKeyDown(KeyBinding_warpEMSKey) && ambul.Exists() && hasWarped)
-                {
-                    Game.DisplayHelp("You have already warped EMS, if they are stuck either hit - to make them park where they are or call EMS again.");
-                }
-            }
-        }
-
-        //Function to listen for button that makes EMS stop and park where they are and continue on foot (- by default)
-        public static void parkHereChecker()
-        {
-            Game.DisplayHelp("Taking too long to park while your patient is bleeding out? Hit - on the numpad to make them park where they are!");
-
-            while (true)
-            {
-                GameFiber.Yield();
-
-                if (Game.IsKeyDown(KeyBinding_parkHere) && ambul.Exists() && !isParked)
-                {
-                    isParked = true;
-
-                    medicPed.Tasks.Clear();
-                    Game.DisplaySubtitle("~r~Medic~w~: This is medic 15, continuing on foot.");
-                    GameFiber.Wait(150);
-                    SceneHandler.medicTasks(medicPed, patientPed);
-                }
-            }
         }
 
         internal static void Initialize()
